@@ -37,6 +37,9 @@ src/
 │
 ├── utils/                        # Lógica pura sin estado UI (100% portable a backend u otro lenguaje)
 │   ├── currency.ts               # Reglas CLP enteros, IVA 19% Chile, formateo es-CL y denominaciones
+│   ├── cashShift.ts              # Cálculo determinista de turnos, arqueo físico CLP y Cierre Z aislado
+│   ├── salesCalculator.ts        # Motor puro de comandas: líneas, descuentos, extras, neto e IVA 19%
+│   ├── storageAdapter.ts         # Contrato abstracto de persistencia (intercambiable a REST/SQL)
 │   ├── permissions.ts            # Matriz RBAC por rol, privilegios granulares, módulos y estación
 │   ├── categoryMeta.ts           # Metadatos visuales y descripciones de categorías gastronómicas
 │   ├── language.ts               # Catálogo de idiomas disponibles (es, en, nl, fr, de)

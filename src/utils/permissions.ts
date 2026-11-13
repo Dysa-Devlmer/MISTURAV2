@@ -89,11 +89,26 @@ export function getDefaultViewForUser(user: Waiter): ActiveView {
 }
 
 /**
- * Checks if a user has a specific granular permission
+ * Checks if a user has a specific granular permission.
+ * Resolves synonymous flags (canCharge <-> canCloseBills, canPrintPrebill <-> canPrintPrebills)
+ * and preserves safe role defaults when migrating cached user profiles.
  */
 export function hasUserPermission(user: Waiter, permission: keyof UserPermissions): boolean {
   if (user.role === 'admin') return true;
   if (!user.permissions) return false;
+
+  if (permission === 'canCharge' || permission === 'canCloseBills') {
+    const val = user.permissions.canCharge ?? user.permissions.canCloseBills;
+    if (typeof val === 'boolean') return val;
+    return user.role === 'cashier' || user.role === 'manager';
+  }
+
+  if (permission === 'canPrintPrebill' || permission === 'canPrintPrebills') {
+    const val = user.permissions.canPrintPrebill ?? user.permissions.canPrintPrebills;
+    if (typeof val === 'boolean') return val;
+    return user.role === 'cashier' || user.role === 'manager';
+  }
+
   return !!user.permissions[permission];
 }
 

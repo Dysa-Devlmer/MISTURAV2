@@ -27,6 +27,13 @@ import {
   formatTimeCL,
 } from '../utils/currency';
 import { calculateShiftCashSummary } from '../utils/cashShift';
+import {
+  applyLineUpdate,
+  buildSaleLine,
+  calculateSaleTotals,
+  recalculateSaleWithItems,
+  upsertProductIntoSaleLines,
+} from '../utils/salesCalculator';
 
 const CATALOG_SEED_VERSION = '2026-11-mistura-clp-v2';
 let hasCheckedSeedMigration = false;
@@ -1307,26 +1314,6 @@ export const POSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return closeCashShift(countedCash, notes).report;
   };
 
-  // Recalculate totals helper using Chilean CLP integer rounding and IVA breakdown
-  const calculateSaleTotals = (items: SaleLine[]): { subtotal: number; taxTotal: number; total: number } => {
-    let subtotal = 0;
-    let taxTotal = 0;
-    let total = 0;
-
-    items.forEach(item => {
-      const { net, iva, gross } = calculateNetAndIva(item.total, item.iva ?? CHILE_IVA_PERCENT);
-      subtotal += net;
-      taxTotal += iva;
-      total += gross;
-    });
-
-    return {
-      subtotal: roundCLP(subtotal),
-      taxTotal: roundCLP(taxTotal),
-      total: roundCLP(total),
-    };
-  };
-
   // Create or open a sale
   const createSale = (tableId?: number, dinersCount: number = 2): Sale => {
     const matchedTable = tables.find(t => t.id === tableId);
@@ -1425,26 +1412,20 @@ export const POSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newNumber = `${prefix}-${String(sales.length + 1).padStart(4, '0')}`;
     const currentRate = rates.find(r => r.id === selectedRateId) || rates[0];
 
-    const initialItems: SaleLine[] = (params.items || []).map((entry, idx) => {
-      const unitPrice = roundCLP(entry.product.price * currentRate.multiplier);
-      return {
+    const initialItems: SaleLine[] = (params.items || []).map((entry, idx) =>
+      buildSaleLine({
         id: `L-${newId}-${idx}`,
         lineId: idx + 1,
-        productId: entry.product.id,
-        productName: entry.product.name,
+        product: entry.product,
         quantity: entry.quantity,
-        unitPrice,
-        originalPrice: entry.product.price,
-        iva: entry.product.iva ?? CHILE_IVA_PERCENT,
-        discount: 0,
-        total: roundCLP(unitPrice * entry.quantity),
+        rateMultiplier: currentRate.multiplier,
         kitchenBlock: entry.product.kitchenBlock || 1,
         kitchenStatus: entry.product.isKitchen ? 'cooking' : 'ready',
         waiterId: waiter.id,
         waiterName: waiter.name,
         addedAtTime: timeStr,
-      };
-    });
+      })
+    );
 
     const totals = calculateSaleTotals(initialItems);
     const fee = roundCLP(params.deliveryFee || 0);
@@ -1545,9 +1526,6 @@ export const POSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const now = new Date();
     const timeStr = formatTimeCL(now);
     const currentRate = rates.find(r => r.id === (ensuredSale?.rateId || selectedRateId)) || rates[0];
-    const baseUnitPrice = roundCLP(product.price * currentRate.multiplier);
-    const unitPrice = roundCLP(baseUnitPrice + extraPrice);
-    const lineTotal = roundCLP(unitPrice * quantity);
 
     // Decrement stock
     setProducts(prev => prev.map(p => {
@@ -1561,66 +1539,24 @@ export const POSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const baseSale = prev || ensuredSale;
       if (!baseSale) return null;
 
-      const existingIndex = baseSale.items.findIndex(i =>
-        i.productId === product.id &&
-        !i.kitchenNotes &&
-        !notes &&
-        !i.selectedOption &&
-        !optionName &&
-        !extraPrice &&
-        i.kitchenStatus === 'pending' &&
-        (i.waiterId === waiter.id || !i.waiterId)
-      );
+      const newItems = upsertProductIntoSaleLines(baseSale.items, {
+        lineUniqueId: `L-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        product,
+        quantity,
+        rateMultiplier: currentRate.multiplier,
+        optionName,
+        notes,
+        customBlock,
+        extraPrice,
+        waiterId: waiter.id,
+        waiterName: waiter.name,
+        addedAtTime: timeStr,
+      });
 
-      let newItems: SaleLine[];
-      if (existingIndex > -1) {
-        newItems = [...baseSale.items];
-        const exist = newItems[existingIndex];
-        const newQty = exist.quantity + quantity;
-        const newTotal = roundCLP(exist.unitPrice * newQty * (1 - exist.discount / 100));
-        newItems[existingIndex] = {
-          ...exist,
-          quantity: newQty,
-          total: newTotal,
-          waiterId: waiter.id,
-          waiterName: waiter.name,
-          addedAtTime: timeStr,
-        };
-      } else {
-        const newLine: SaleLine = {
-          id: `L-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-          lineId: baseSale.items.length + 1,
-          productId: product.id,
-          productName: product.name,
-          quantity,
-          unitPrice,
-          originalPrice: product.price,
-          modifiersExtraPrice: extraPrice,
-          iva: product.iva ?? CHILE_IVA_PERCENT,
-          discount: 0,
-          total: lineTotal,
-          kitchenBlock: customBlock || product.kitchenBlock || 1,
-          kitchenStatus: product.isKitchen ? 'pending' : 'ready',
-          selectedOption: optionName,
-          kitchenNotes: notes,
-          waiterId: waiter.id,
-          waiterName: waiter.name,
-          addedAtTime: timeStr,
-        };
-        newItems = [...baseSale.items, newLine];
-      }
-
-      const totals = calculateSaleTotals(newItems);
-      const fee = baseSale.deliveryFee || 0;
-      const updatedSale: Sale = {
-        ...baseSale,
-        currentWaiterId: waiter.id,
-        currentWaiterName: waiter.name,
-        items: newItems,
-        subtotal: totals.subtotal,
-        taxTotal: totals.taxTotal,
-        total: roundCLP(totals.total + fee),
-      };
+      const updatedSale = recalculateSaleWithItems(baseSale, newItems, {
+        id: waiter.id,
+        name: waiter.name,
+      });
 
       setSales(allSales => allSales.map(s => s.id === updatedSale.id ? updatedSale : s));
 
@@ -1681,14 +1617,7 @@ export const POSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let resultSale: Sale;
     if (existingSale) {
       const mergedItems = [...existingSale.items, ...newLines];
-      const totals = calculateSaleTotals(mergedItems);
-      resultSale = {
-        ...existingSale,
-        items: mergedItems,
-        subtotal: totals.subtotal,
-        taxTotal: totals.taxTotal,
-        total: totals.total,
-      };
+      resultSale = recalculateSaleWithItems(existingSale, mergedItems);
       setSales(prev => prev.map(s => s.id === resultSale.id ? resultSale : s));
       if (activeSale && activeSale.id === resultSale.id) {
         setActiveSale(resultSale);
@@ -1743,31 +1672,11 @@ export const POSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateSaleLine = (lineId: string, updates: Partial<SaleLine>) => {
     setActiveSale(prev => {
       if (!prev) return null;
-      const newItems = prev.items.map(item => {
-        if (item.id === lineId) {
-          const updated = { ...item, ...updates };
-          if (updates.modifiersExtraPrice !== undefined) {
-            const basePrice = item.unitPrice - (item.modifiersExtraPrice || 0);
-            updated.unitPrice = roundCLP(basePrice + updates.modifiersExtraPrice);
-          }
-          const disc = updated.discount || 0;
-          updated.total = roundCLP(updated.unitPrice * updated.quantity * (1 - disc / 100));
-          return updated;
-        }
-        return item;
+      const newItems = applyLineUpdate(prev.items, lineId, updates);
+      const updatedSale = recalculateSaleWithItems(prev, newItems, {
+        id: waiter.id,
+        name: waiter.name,
       });
-
-      const totals = calculateSaleTotals(newItems);
-      const fee = prev.deliveryFee || 0;
-      const updatedSale: Sale = {
-        ...prev,
-        currentWaiterId: waiter.id,
-        currentWaiterName: waiter.name,
-        items: newItems,
-        subtotal: totals.subtotal,
-        taxTotal: totals.taxTotal,
-        total: roundCLP(totals.total + fee),
-      };
 
       setSales(allSales => allSales.map(s => s.id === updatedSale.id ? updatedSale : s));
       setTables(allTables => allTables.map(t => {
@@ -1796,17 +1705,10 @@ export const POSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       const newItems = prev.items.filter(item => item.id !== lineId);
-      const totals = calculateSaleTotals(newItems);
-      const fee = prev.deliveryFee || 0;
-      const updatedSale: Sale = {
-        ...prev,
-        currentWaiterId: waiter.id,
-        currentWaiterName: waiter.name,
-        items: newItems,
-        subtotal: totals.subtotal,
-        taxTotal: totals.taxTotal,
-        total: roundCLP(totals.total + (newItems.length > 0 ? fee : 0)),
-      };
+      const updatedSale = recalculateSaleWithItems(prev, newItems, {
+        id: waiter.id,
+        name: waiter.name,
+      });
 
       setSales(allSales => allSales.map(s => s.id === updatedSale.id ? updatedSale : s));
       setTables(allTables => allTables.map(t => {

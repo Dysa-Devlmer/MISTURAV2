@@ -9,6 +9,10 @@ export const DEFAULT_ADMIN_PERMISSIONS = {
   canManageUsers: true,
   canViewFinancialReports: true,
   canTransferTables: true,
+  canCharge: true,
+  canCloseBills: true,
+  canPrintPrebill: true,
+  canPrintPrebills: true,
 };
 
 export const DEFAULT_CASHIER_PERMISSIONS = {
@@ -20,6 +24,10 @@ export const DEFAULT_CASHIER_PERMISSIONS = {
   canManageUsers: false,
   canViewFinancialReports: true,
   canTransferTables: true,
+  canCharge: true,
+  canCloseBills: true,
+  canPrintPrebill: true,
+  canPrintPrebills: true,
 };
 
 export const DEFAULT_WAITER_PERMISSIONS = {
@@ -31,6 +39,10 @@ export const DEFAULT_WAITER_PERMISSIONS = {
   canManageUsers: false,
   canViewFinancialReports: false,
   canTransferTables: true,
+  canCharge: false,
+  canCloseBills: false,
+  canPrintPrebill: false,
+  canPrintPrebills: false,
 };
 
 export const DEFAULT_KITCHEN_PERMISSIONS = {
@@ -42,6 +54,10 @@ export const DEFAULT_KITCHEN_PERMISSIONS = {
   canManageUsers: false,
   canViewFinancialReports: false,
   canTransferTables: false,
+  canCharge: false,
+  canCloseBills: false,
+  canPrintPrebill: false,
+  canPrintPrebills: false,
 };
 
 export const INITIAL_WAITERS: Waiter[] = [

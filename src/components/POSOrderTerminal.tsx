@@ -52,6 +52,14 @@ export const POSOrderTerminal: React.FC = () => {
   // Mobile / Waiter specific states
   const [isMobileCartOpen, setIsMobileCartOpen] = useState<boolean>(false);
   const [kitchenSentToast, setKitchenSentToast] = useState<boolean>(false);
+  const [terminalNotice, setTerminalNotice] = useState<string | null>(null);
+
+  const showTerminalNotice = (message: string) => {
+    setTerminalNotice(message);
+    setTimeout(() => {
+      setTerminalNotice((prev) => (prev === message ? null : prev));
+    }, 3500);
+  };
 
   const isLight = themeMode === 'vibrant-light';
 
@@ -1215,7 +1223,7 @@ export const POSOrderTerminal: React.FC = () => {
                 onClick={() => {
                   sound.playTap();
                   if (!canApplyDiscount) {
-                    alert('Acción restringida: Solamente usuarios con permisos autorizados pueden gestionar promociones.');
+                    showTerminalNotice('Acción restringida: Solamente usuarios con permisos autorizados pueden gestionar promociones.');
                     return;
                   }
                   setIsCouponModalOpen(true);
@@ -1320,7 +1328,7 @@ export const POSOrderTerminal: React.FC = () => {
                   onClick={() => {
                     sound.playTap();
                     if (!canTransfer) {
-                      alert('No cuenta con privilegios para traspasar mesas. Solicite autorización a su encargado.');
+                      showTerminalNotice('No cuenta con privilegios para traspasar mesas. Solicite autorización a su encargado.');
                       return;
                     }
                     setIsTransferModalOpen(true);
@@ -1364,7 +1372,7 @@ export const POSOrderTerminal: React.FC = () => {
                   onClick={() => {
                     sound.playTap();
                     if (!canApplyDiscount) {
-                      alert('No cuenta con privilegios para aplicar descuentos o cupones. Función reservada a Cajera y Administrador.');
+                      showTerminalNotice('No cuenta con privilegios para aplicar descuentos o cupones. Función reservada a Cajera y Administrador.');
                       return;
                     }
                     setIsCouponModalOpen(true);
@@ -2004,6 +2012,14 @@ export const POSOrderTerminal: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Non-blocking permission / status toast */}
+      {terminalNotice && (
+        <div className="fixed bottom-5 right-5 z-[60] max-w-sm bg-rose-600 text-white px-4 py-3 rounded-2xl shadow-2xl border border-rose-400 flex items-center gap-2.5 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
+          <ShieldAlert className="w-4 h-4 shrink-0" />
+          <span>{terminalNotice}</span>
         </div>
       )}
     </div>

@@ -52,6 +52,7 @@ export const AdminPanel: React.FC = () => {
   const isLight = themeMode === 'vibrant-light';
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [brandSavedNotice, setBrandSavedNotice] = useState<boolean>(false);
 
   // CATEGORY MODAL STATE
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState<boolean>(false);
@@ -795,21 +796,30 @@ export const AdminPanel: React.FC = () => {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              sound.playTap();
+              sound.playSuccess();
               updateRestaurantBrand(brandFormData);
-              alert('Configuración guardada correctamente.');
+              setBrandSavedNotice(true);
+              setTimeout(() => setBrandSavedNotice(false), 3000);
             }}
             className={`p-5 rounded-3xl border shadow-xs space-y-4 ${
               isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
             }`}
           >
-            <div className={`flex items-center gap-2 pb-2 border-b ${
+            <div className={`flex items-center justify-between gap-2 pb-2 border-b ${
               isLight ? 'border-slate-200' : 'border-slate-800'
             }`}>
-              <Building className="w-4 h-4 text-blue-500" />
-              <h3 className={`font-extrabold text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                Datos Fiscales y Parámetros del Restaurante
-              </h3>
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-blue-500" />
+                <h3 className={`font-extrabold text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Datos Fiscales y Parámetros del Restaurante
+                </h3>
+              </div>
+              {brandSavedNotice && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[11px] font-black">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Configuración guardada</span>
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">

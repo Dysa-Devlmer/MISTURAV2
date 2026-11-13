@@ -41,13 +41,22 @@ export const DatabaseManager: React.FC = () => {
   // Maintenance Dialogs
   const [maintenanceAction, setMaintenanceAction] = useState<'purge_sales' | 'reset_demo' | 'reset_stock' | 'factory_reset' | null>(null);
   const [confirmPhrase, setConfirmPhrase] = useState<string>('');
+  const [pendingDeleteRecord, setPendingDeleteRecord] = useState<{ id: any; tableName: string } | null>(null);
 
-  // Status message
+  // Status messages
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
+    setActionError(null);
     setActionSuccess(msg);
-    setTimeout(() => setActionSuccess(null), 4000);
+    setTimeout(() => setActionSuccess((prev) => (prev === msg ? null : prev)), 4000);
+  };
+
+  const showErrorToast = (msg: string) => {
+    setActionSuccess(null);
+    setActionError(msg);
+    setTimeout(() => setActionError((prev) => (prev === msg ? null : prev)), 4500);
   };
 
   // Table definitions & Live Record count
@@ -333,7 +342,7 @@ export const DatabaseManager: React.FC = () => {
         showToast('¡Base de datos importada y restaurada exitosamente!');
       } catch (err: any) {
         sound.playError();
-        alert('Error al leer el archivo de respaldo JSON: ' + err.message);
+        showErrorToast('Error al leer el archivo de respaldo JSON: ' + err.message);
       }
     };
     reader.readAsText(file);
@@ -417,19 +426,26 @@ export const DatabaseManager: React.FC = () => {
   };
 
   const handleDeleteRecord = (recordId: any) => {
-    if (!window.confirm(`¿Seguro que deseas eliminar este registro (${recordId}) de ${activeTableObj.name}?`)) return;
+    sound.playTap();
+    setPendingDeleteRecord({ id: recordId, tableName: activeTableObj.name });
+  };
+
+  const confirmDeleteRecord = () => {
+    if (!pendingDeleteRecord) return;
     sound.playTap();
     const pk = activeTableObj.primaryKey;
-    const updated = activeTableObj.data.filter((item: any) => item[pk] !== recordId);
+    const updated = activeTableObj.data.filter((item: any) => item[pk] !== pendingDeleteRecord.id);
     activeTableObj.setData(updated as any);
-    showToast(`Registro ${recordId} eliminado.`);
+    showToast(`Registro ${pendingDeleteRecord.id} eliminado.`);
+    setPendingDeleteRecord(null);
   };
 
   // MAINTENANCE ACTIONS
   const handleExecuteMaintenance = () => {
     if (maintenanceAction === 'purge_sales') {
       if (confirmPhrase.trim().toUpperCase() !== 'PURGAR') {
-        alert('Por favor escribe PURGAR para confirmar.');
+        sound.playError();
+        showErrorToast('Por favor escribe PURGAR para confirmar.');
         return;
       }
       sound.playSuccess();
@@ -456,7 +472,8 @@ export const DatabaseManager: React.FC = () => {
       setConfirmPhrase('');
     } else if (maintenanceAction === 'factory_reset') {
       if (confirmPhrase.trim().toUpperCase() !== 'RESET DYPOS') {
-        alert('Por favor escribe RESET DYPOS para confirmar el formateo total.');
+        sound.playError();
+        showErrorToast('Por favor escribe RESET DYPOS para confirmar el formateo total.');
         return;
       }
       sound.playSuccess();
@@ -471,11 +488,17 @@ export const DatabaseManager: React.FC = () => {
 
   return (
     <div className={`p-4 sm:p-6 space-y-6 ${isLight ? 'text-slate-800' : 'text-slate-100'}`}>
-      {/* Toast Notification */}
+      {/* Toast Notifications */}
       {actionSuccess && (
-        <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-bounce border border-emerald-400">
+        <div className="fixed top-20 right-6 z-50 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold border border-emerald-400">
           <CheckCircle2 className="w-5 h-5" />
           <span>{actionSuccess}</span>
+        </div>
+      )}
+      {actionError && (
+        <div className="fixed top-20 right-6 z-[60] bg-rose-600 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold border border-rose-400">
+          <AlertTriangle className="w-5 h-5" />
+          <span>{actionError}</span>
         </div>
       )}
 
@@ -928,6 +951,43 @@ export const DatabaseManager: React.FC = () => {
                 className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-md shadow-rose-600/30"
               >
                 Confirmar y Ejecutar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Record Confirmation Modal */}
+      {pendingDeleteRecord && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`w-full max-w-sm p-6 rounded-3xl border shadow-2xl space-y-4 ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+          }`}>
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto border border-rose-500/20">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-black">¿Eliminar Registro?</h3>
+              <p className={`text-xs ${isLight ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
+                Se eliminará el registro <strong className="font-mono">{String(pendingDeleteRecord.id)}</strong> de <strong>{pendingDeleteRecord.tableName}</strong>.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => setPendingDeleteRecord(null)}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                  isLight
+                    ? 'border-slate-300 bg-white hover:bg-slate-100 text-slate-800'
+                    : 'border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300'
+                }`}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteRecord}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black shadow-md shadow-rose-600/30"
+              >
+                Sí, Eliminar
               </button>
             </div>
           </div>
