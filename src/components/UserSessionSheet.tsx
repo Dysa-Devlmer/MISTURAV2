@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { Waiter } from '../types';
+import { LanguageSelector } from './LanguageSelector';
 
 interface UserSessionSheetProps {
   isOpen: boolean;
@@ -331,6 +332,14 @@ export const UserSessionSheet: React.FC<UserSessionSheetProps> = ({ isOpen, onCl
                   {isSoundOn ? <Volume2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <VolumeX className="w-4 h-4 opacity-50 shrink-0" />}
                   <span className="truncate">{isSoundOn ? 'Sonido Activado' : 'Silencio'}</span>
                 </button>
+              </div>
+
+              {/* Language Selector on Mobile/Compact */}
+              <div className={`p-3 rounded-2xl border flex items-center justify-between gap-2 ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
+              }`}>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Idioma</span>
+                <LanguageSelector variant="menu" className="scale-90 origin-right" />
               </div>
 
               {/* Exit / Logout Button */}

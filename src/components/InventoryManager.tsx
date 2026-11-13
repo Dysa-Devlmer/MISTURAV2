@@ -131,8 +131,90 @@ export const InventoryManager: React.FC = () => {
           </div>
         </div>
 
-        {/* Products Stock List (Responsive Table with smooth scroll) */}
-        <div className={`rounded-2xl border shadow-xl overflow-hidden ${
+        {/* Mobile Banking-Style Stock Cards (< md) */}
+        <div className="md:hidden space-y-2.5">
+          {filtered.length === 0 ? (
+            <div className={`p-8 rounded-2xl border text-center text-slate-500 text-xs font-medium ${
+              isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+            }`}>
+              No se encontraron artículos con los filtros aplicados.
+            </div>
+          ) : (
+            filtered.map(prod => {
+              const isOutOfStock = prod.stock <= 0;
+              const isLow = prod.stock > 0 && prod.stock <= prod.minStock;
+              const catName = categories.find(c => c.id === prod.categoryId)?.name || 'General';
+              return (
+                <div
+                  key={prod.id}
+                  className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                    isLight ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-900 border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {prod.image ? (
+                      <img
+                        src={prod.image}
+                        alt={prod.name}
+                        className="w-11 h-11 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-11 h-11 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center shrink-0">
+                        <Package className="w-5 h-5" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs sm:text-sm truncate">{prod.name}</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5 tabular-nums">
+                        {catName} · {formatMoney(prod.price)}
+                      </div>
+                      <div className={`text-[11px] font-black mt-0.5 tabular-nums ${
+                        isOutOfStock ? 'text-rose-600 dark:text-rose-400' : isLow ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                      }`}>
+                        Stock: {prod.stock} uds (mín {prod.minStock})
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleStockChange(prod.id, -1)}
+                      aria-label="Restar 1"
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-black border cursor-pointer active:scale-95 ${
+                        isLight ? 'bg-slate-100 border-slate-300 text-slate-800' : 'bg-slate-800 border-slate-700 text-slate-200'
+                      }`}
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStockChange(prod.id, 1)}
+                      aria-label="Sumar 1"
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs border cursor-pointer active:scale-95 ${
+                        isLight ? 'bg-slate-100 border-slate-300 text-slate-800' : 'bg-slate-800 border-slate-700 text-slate-200'
+                      }`}
+                    >
+                      +1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStockChange(prod.id, 5)}
+                      aria-label="Sumar 5"
+                      className="w-10 h-10 bg-sky-600 hover:bg-sky-500 text-white rounded-xl flex items-center justify-center font-black text-xs cursor-pointer active:scale-95"
+                    >
+                      +5
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Products Stock List (Desktop/Tablet md+ Responsive Table) */}
+        <div className={`hidden md:block rounded-2xl border shadow-xl overflow-hidden ${
           isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
         }`}>
           <div className="overflow-x-auto">
@@ -191,7 +273,7 @@ export const InventoryManager: React.FC = () => {
                           </span>
                         </td>
 
-                        <td className="p-3.5 font-mono">
+                        <td className="p-3.5 font-mono tabular-nums">
                           <div className="font-bold text-amber-600 dark:text-amber-400">
                             {formatMoney(prod.price)}
                           </div>
@@ -217,7 +299,7 @@ export const InventoryManager: React.FC = () => {
                         </td>
 
                         <td className="p-3.5 text-center">
-                          <span className="text-sm font-black font-mono">
+                          <span className="text-sm font-black font-mono tabular-nums">
                             {prod.stock}
                           </span>
                           <span className="text-[10px] text-slate-400 block">mín: {prod.minStock}</span>
@@ -229,7 +311,7 @@ export const InventoryManager: React.FC = () => {
                           }`}>
                             <button
                               onClick={() => handleStockChange(prod.id, -1)}
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold cursor-pointer active:scale-95 ${
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold cursor-pointer active:scale-95 ${
                                 isLight ? 'bg-white hover:bg-slate-200 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
                               }`}
                               title="Restar 1"
@@ -238,7 +320,7 @@ export const InventoryManager: React.FC = () => {
                             </button>
                             <button
                               onClick={() => handleStockChange(prod.id, 1)}
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold cursor-pointer active:scale-95 ${
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold cursor-pointer active:scale-95 ${
                                 isLight ? 'bg-white hover:bg-slate-200 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
                               }`}
                               title="Sumar 1"
@@ -247,14 +329,14 @@ export const InventoryManager: React.FC = () => {
                             </button>
                             <button
                               onClick={() => handleStockChange(prod.id, 5)}
-                              className="w-7 h-7 bg-sky-600 hover:bg-sky-500 text-white rounded-lg flex items-center justify-center font-bold text-[11px] cursor-pointer active:scale-95"
+                              className="w-8 h-8 bg-sky-600 hover:bg-sky-500 text-white rounded-lg flex items-center justify-center font-bold text-[11px] cursor-pointer active:scale-95"
                               title="Sumar 5"
                             >
                               +5
                             </button>
                             <button
                               onClick={() => handleStockChange(prod.id, 10)}
-                              className="w-7 h-7 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold text-[11px] cursor-pointer active:scale-95"
+                              className="w-8 h-8 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold text-[11px] cursor-pointer active:scale-95"
                               title="Sumar 10"
                             >
                               +10

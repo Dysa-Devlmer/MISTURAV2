@@ -128,124 +128,160 @@ export const FloorPlanView: React.FC = () => {
       {/* ========================================================
           1. TOP DY POS HEADER BAR (MODERN SALON CONTROLS)
       ======================================================== */}
-      <div className={`px-2.5 py-2 sm:px-4 flex items-center justify-between gap-2 shrink-0 shadow-xs border-b transition-colors ${
+      <div className={`px-3 py-2 sm:px-4 flex flex-col gap-2 shrink-0 shadow-xs border-b transition-colors ${
         isLight
           ? 'bg-white/95 backdrop-blur-md border-slate-200 text-slate-800'
           : 'bg-slate-900/95 backdrop-blur-md border-slate-800 text-slate-100'
       }`}>
-        {/* Salon Indicator & Quick Selector Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs font-bold w-full sm:w-auto">
-          {/* Salones Pills */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0">
-            {salons.map(s => {
-              const isSelected = s.id === selectedSalonId;
-              const sColor = salonColors[s.id] || salonColors[1];
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => {
-                    sound.playTap();
-                    setSelectedSalonId(s.id);
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all shrink-0 ${
-                    isSelected
-                      ? `bg-gradient-to-r ${sColor.bg} text-white shadow-xs`
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {s.name}
-                </button>
-              );
-            })}
+        <div className="flex items-center justify-between gap-2">
+          {/* Salon Indicator & Quick Selector Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar text-xs font-bold flex-1 min-w-0">
+            {/* Salones Pills */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0">
+              {salons.map(s => {
+                const isSelected = s.id === selectedSalonId;
+                const sColor = salonColors[s.id] || salonColors[1];
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                      sound.playTap();
+                      setSelectedSalonId(s.id);
+                    }}
+                    className={`min-h-[34px] px-3 py-1.5 rounded-lg text-xs font-black transition-all shrink-0 cursor-pointer whitespace-nowrap ${
+                      isSelected
+                        ? `bg-gradient-to-r ${sColor.bg} text-white shadow-xs`
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {s.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Color Legend (Desktop lg+) */}
+            <div className="hidden xl:flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 bg-emerald-500 rounded-sm block" />
+                <span className="text-slate-600 dark:text-slate-400 text-[11px] font-semibold">Libre</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 bg-rose-500 rounded-sm block" />
+                <span className="text-slate-600 dark:text-slate-400 text-[11px] font-semibold">Ocupada</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 bg-purple-600 rounded-sm block" />
+                <span className="text-slate-600 dark:text-slate-400 text-[11px] font-semibold">Pre-ticket</span>
+              </div>
+            </div>
           </div>
 
-          {/* Color Legend (Modern Dy Pos Palette) */}
-          <div className="hidden lg:flex items-center gap-3 sm:gap-4 pl-3 border-l border-slate-200 dark:border-slate-800 shrink-0">
-            {/* Libre */}
-            <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 bg-emerald-500 rounded-md border border-emerald-400 shadow-xs block"></span>
-              <span className="text-slate-600 dark:text-slate-400 text-[11px] font-semibold">Libre</span>
+          {/* View & Density Controls */}
+          <div className="hidden sm:flex items-center gap-2 ml-auto shrink-0">
+            <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] font-bold">
+              <button
+                onClick={() => { sound.playTap(); setTableDensity('compact'); }}
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                  tableDensity === 'compact'
+                    ? 'bg-indigo-600 text-white font-black shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Matriz
+              </button>
+              <button
+                onClick={() => { sound.playTap(); setTableDensity('medium'); }}
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                  tableDensity === 'medium'
+                    ? 'bg-indigo-600 text-white font-black shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Medio
+              </button>
+              <button
+                onClick={() => { sound.playTap(); setTableDensity('large'); }}
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                  tableDensity === 'large'
+                    ? 'bg-indigo-600 text-white font-black shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Detallado
+              </button>
             </div>
 
-            {/* Ocupada */}
-            <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 bg-rose-500 rounded-md border border-rose-400 shadow-xs block"></span>
-              <span className="text-slate-600 dark:text-slate-400 text-[11px] font-semibold">Ocupada</span>
-            </div>
+            <button
+              onClick={() => { sound.playTap(); setActiveView('menu'); }}
+              className="touch-btn px-2.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-black shadow-xs flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer whitespace-nowrap"
+              title="Ver y generar Códigos QR para las mesas"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Carta QR</span>
+            </button>
 
-            {/* Pre-ticket Impreso / Cobro */}
-            <div className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 bg-purple-600 rounded-md border border-purple-400 shadow-xs block"></span>
-              <span className="text-slate-600 dark:text-slate-400 text-[11px] font-semibold">Cuenta / Pre-ticket</span>
-            </div>
+            <button
+              onClick={handlePrevSalon}
+              aria-label="Salón anterior"
+              className="touch-btn px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold shadow-xs flex items-center gap-1 border border-slate-300 dark:border-slate-700 cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Anterior</span>
+            </button>
+
+            <button
+              onClick={handleNextSalon}
+              aria-label="Siguiente salón"
+              className="touch-btn px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold shadow-xs flex items-center gap-1 border border-slate-300 dark:border-slate-700 cursor-pointer"
+            >
+              <span className="hidden xl:inline">Siguiente</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
-        {/* View & Density Controls + Navigation Pill Buttons */}
-        <div className="hidden sm:flex items-center gap-2 sm:gap-3 ml-auto">
-          {/* Density / Size Selector */}
-          <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 text-[11px] font-bold">
-            <button
-              onClick={() => { sound.playTap(); setTableDensity('compact'); }}
-              title="Modo Matriz Dy Pos 10x"
-              className={`px-3 py-1 rounded-xl transition-all ${
-                tableDensity === 'compact'
-                  ? 'bg-indigo-600 text-white font-black shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Matriz 10x
-            </button>
-            <button
-              onClick={() => { sound.playTap(); setTableDensity('medium'); }}
-              title="Tarjetas Táctiles Medias"
-              className={`px-3 py-1 rounded-xl transition-all ${
-                tableDensity === 'medium'
-                  ? 'bg-indigo-600 text-white font-black shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Medio
-            </button>
-            <button
-              onClick={() => { sound.playTap(); setTableDensity('large'); }}
-              title="Detalle Ampliado"
-              className={`px-3 py-1 rounded-xl transition-all ${
-                tableDensity === 'large'
-                  ? 'bg-indigo-600 text-white font-black shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Detallado
-            </button>
+        {/* Mobile/Tablet Quick Status Filter Chips */}
+        <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5">
+            {[
+              { id: 'all' as const, label: 'Todas', dot: '' },
+              { id: 'free' as const, label: 'Libres', dot: 'bg-emerald-500' },
+              { id: 'occupied' as const, label: 'Ocupadas', dot: 'bg-rose-500' },
+              { id: 'billed' as const, label: 'Pre-ticket', dot: 'bg-purple-500' },
+            ].map(f => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => { sound.playTap(); setStatusFilter(f.id); }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer whitespace-nowrap ${
+                  statusFilter === f.id
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-2xs'
+                    : isLight
+                    ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {f.dot && <span className={`w-2 h-2 rounded-full ${f.dot}`} />}
+                <span>{f.label}</span>
+              </button>
+            ))}
           </div>
 
-          {/* QR Menu shortcut */}
-          <button
-            onClick={() => { sound.playTap(); setActiveView('menu'); }}
-            className="touch-btn px-2.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-black shadow-xs flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer"
-            title="Ver y generar Códigos QR para las mesas"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">Carta QR</span>
-          </button>
-
-          {/* Navigation Buttons (Anterior, Siguiente) */}
-          <button
-            onClick={handlePrevSalon}
-            className="touch-btn px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold shadow-xs flex items-center gap-1 border border-slate-300 dark:border-slate-700"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Anterior</span>
-          </button>
-
-          <button
-            onClick={handleNextSalon}
-            className="touch-btn px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold shadow-xs flex items-center gap-1 border border-slate-300 dark:border-slate-700"
-          >
-            <span className="hidden md:inline">Siguiente</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="sm:hidden flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                sound.playTap();
+                setTableDensity(prev => (prev === 'compact' ? 'medium' : 'compact'));
+              }}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border cursor-pointer ${
+                isLight ? 'bg-slate-100 border-slate-300 text-slate-800' : 'bg-slate-800 border-slate-700 text-slate-200'
+              }`}
+            >
+              {tableDensity === 'compact' ? 'Vista Amplia' : 'Vista Matriz'}
+            </button>
+          </div>
         </div>
       </div>
 

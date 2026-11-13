@@ -32,6 +32,7 @@ npm run build
 npm run start
 ```
 
-## Arquitectura y portabilidad
+## Arquitectura, API y guía paso a paso multiplataforma
 
-Consulta [`ARCHITECTURE.md`](./ARCHITECTURE.md) para ver el mapa completo de tipos, reglas contables CLP/IVA, permisos y guía de migración si deseas portar la lógica a otro lenguaje o backend (Python, Go, C#, Java, etc.).
+- Consulta [`GUIA_DESARROLLO_COMPLETA.md`](./GUIA_DESARROLLO_COMPLETA.md) para ver la especificación completa del sistema en español: todas las entidades SQL, reglas CLP/IVA 19%, los 38 permisos RBAC, catálogo completo de endpoints REST + WebSockets, inventario de pantallas y el **plan paso a paso por fases (Fases 0 a 10)** para recrearlo y probarlo en otro lenguaje (Web, Software Desktop y App Mobile).
+- Consulta [`ARCHITECTURE.md`](./ARCHITECTURE.md) para el mapa rápido de carpetas y módulos puros del código actual.

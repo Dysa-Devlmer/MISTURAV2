@@ -80,10 +80,10 @@ export const KitchenDisplay: React.FC = () => {
         {/* Course Filters & Session Actions */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Filter by Block / Course */}
-          <div className={`flex items-center gap-1.5 p-1 rounded-2xl border shadow-inner ${
+          <div className={`flex items-center gap-1.5 p-1 rounded-2xl border shadow-inner overflow-x-auto no-scrollbar max-w-full ${
             isLight ? 'bg-white border-slate-200' : 'bg-slate-900/90 border-slate-800'
           }`}>
-            <span className="text-xs text-slate-500 dark:text-slate-400 px-2.5 flex items-center gap-1 font-bold">
+            <span className="text-xs text-slate-500 dark:text-slate-400 px-2.5 flex items-center gap-1 font-bold shrink-0">
               <Filter className="w-3.5 h-3.5 text-amber-500" /> Pase:
             </span>
             <button
@@ -91,7 +91,7 @@ export const KitchenDisplay: React.FC = () => {
                 sound.playTap();
                 setFilterBlock('all');
               }}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all shrink-0 whitespace-nowrap ${
                 filterBlock === 'all'
                   ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -110,7 +110,7 @@ export const KitchenDisplay: React.FC = () => {
                   sound.playTap();
                   setFilterBlock(blk.id);
                 }}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all shrink-0 whitespace-nowrap ${
                   filterBlock === blk.id
                     ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'

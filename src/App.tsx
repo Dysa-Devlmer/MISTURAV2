@@ -82,21 +82,23 @@ const POSMainContent: React.FC = () => {
   const isAllowed = isViewAllowedForUser(activeView, waiter, stationMode, isMobileDevice, systemModules);
   const currentSafeView = isAllowed ? activeView : getDefaultViewForUser(waiter);
 
+  const hideMobileBottomNav = (isMobileDevice || stationMode === 'waiter-mobile') && currentSafeView === 'pos';
+
   return (
     <div className={`flex h-screen w-full overflow-hidden font-sans transition-colors duration-200 ${
       themeMode === 'vibrant-light'
         ? 'bg-slate-100 text-slate-900'
         : 'bg-slate-950 text-slate-100'
     }`}>
-      {/* 1. Modern Animated Collapsible Sidebar on Left */}
+      {/* 1. Modern Animated Collapsible Sidebar (Desktop lg+ / Mobile Bottom Nav + Hub) */}
       <Sidebar />
 
       {/* 2. Main Workspace Viewport on Right */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+      <div className={`flex-1 flex flex-col h-full overflow-hidden min-w-0 ${hideMobileBottomNav ? '' : 'pb-16 lg:pb-0'}`}>
         <TopBar />
         <CashShiftBanner />
 
-        <main className="flex-1 flex overflow-hidden relative">
+        <main className="flex-1 flex overflow-hidden relative min-w-0">
           {currentSafeView === 'dashboard' && <DashboardView />}
           {currentSafeView === 'floor' && <FloorPlanView />}
           {currentSafeView === 'pos' && <POSOrderTerminal />}

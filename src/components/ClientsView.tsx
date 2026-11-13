@@ -3,8 +3,9 @@ import { usePOS } from '../context/POSContext';
 import { CustomerClient } from '../types';
 import { sound } from '../utils/sound';
 import { formatCLP, normalizeCurrencySymbol } from '../utils/currency';
+import { motion, AnimatePresence } from 'motion/react';
 import {
-  Search, Plus, Download, Users, Edit2, Trash2, Check, X, Phone, Mail, MapPin, FileText, Truck
+  Search, Plus, Download, Users, Edit2, Trash2, Check, X, Phone, Mail, MapPin, FileText, Truck, ChevronRight
 } from 'lucide-react';
 
 export const ClientsView: React.FC = () => {
@@ -14,7 +15,6 @@ export const ClientsView: React.FC = () => {
     updateClient,
     deleteClient,
     createChannelSale,
-    setActiveView,
     currency,
     themeMode
   } = usePOS();
@@ -25,6 +25,8 @@ export const ClientsView: React.FC = () => {
   const [search, setSearch] = useState<string>('');
   const [groupFilter, setGroupFilter] = useState<string>('all');
   const [selectedClientId, setSelectedClientId] = useState<string>(clients[0]?.id || '');
+  const [mobileDetailClientId, setMobileDetailClientId] = useState<string | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<CustomerClient | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
@@ -170,36 +172,36 @@ export const ClientsView: React.FC = () => {
       </div>
 
       {/* KPI Summary */}
-      <div className="grid grid-cols-3 gap-3 shrink-0">
-        <div className={`p-3.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 shrink-0">
+        <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
           <div className="text-[11px] font-bold text-slate-500">Total Clientes</div>
           <div className="text-xl font-black tabular-nums mt-0.5">{clients.length}</div>
         </div>
-        <div className={`p-3.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
-          <div className="text-[11px] font-bold text-slate-500">Clientes VIP / Empresa</div>
+        <div className={`p-3.5 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
+          <div className="text-[11px] font-bold text-slate-500">VIP / Empresa</div>
           <div className="text-xl font-black tabular-nums mt-0.5">
             {clients.filter(c => c.group === 'VIP' || c.group === 'Empresa').length}
           </div>
         </div>
-        <div className={`p-3.5 rounded-xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
+        <div className={`col-span-2 sm:col-span-1 p-3.5 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
           <div className="text-[11px] font-bold text-slate-500">Consumo Histórico</div>
-          <div className="text-xl font-black font-mono tabular-nums mt-0.5">{formatMoney(totalRevenue)}</div>
+          <div className="text-xl font-black font-mono tabular-nums mt-0.5 truncate">{formatMoney(totalRevenue)}</div>
         </div>
       </div>
 
-      {/* Main Split: Left List + Right Detail Card */}
+      {/* Main Split: Left List + Right Detail Card (Desktop lg+) */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
         <div className="lg:col-span-8 flex flex-col space-y-3 min-h-0">
           {/* Search + Group Filter */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="relative flex-1 min-w-[180px]">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar por nombre, correo, teléfono o RUT..."
-                className={`w-full rounded-lg border pl-9 pr-3 py-2 text-xs font-medium ${
+                className={`w-full min-h-[40px] rounded-xl border pl-9 pr-3 py-2 text-xs font-medium ${
                   isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
                 }`}
               />
@@ -208,7 +210,7 @@ export const ClientsView: React.FC = () => {
             <select
               value={groupFilter}
               onChange={e => setGroupFilter(e.target.value)}
-              className={`rounded-lg border px-3 py-2 text-xs font-medium ${
+              className={`min-h-[40px] rounded-xl border px-3 py-2 text-xs font-medium ${
                 isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-slate-900 border-slate-700 text-white'
               }`}
             >
@@ -220,14 +222,56 @@ export const ClientsView: React.FC = () => {
             </select>
           </div>
 
-          <div className={`flex-1 rounded-xl border overflow-auto ${
+          {/* Mobile Card Feed (< md) */}
+          <div className="md:hidden flex-1 overflow-y-auto space-y-2 pb-2">
+            {filteredClients.map(client => (
+              <button
+                key={client.id}
+                type="button"
+                onClick={() => {
+                  sound.playTap();
+                  setSelectedClientId(client.id);
+                  setMobileDetailClientId(client.id);
+                }}
+                className={`w-full text-left p-3.5 rounded-2xl border flex items-center justify-between gap-3 active:scale-[0.99] transition-all cursor-pointer ${
+                  isLight ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-900 border-slate-800'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="font-black text-sm truncate">{client.name}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 tabular-nums">
+                    {client.group || 'General'} · {client.phone || client.email || 'Sin contacto'}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="text-right">
+                    <div className="font-mono font-black text-xs tabular-nums">
+                      {formatMoney(client.totalSpent)}
+                    </div>
+                    <div className="text-[10px] text-slate-400 tabular-nums">
+                      {client.ordersCount} pedidos
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </div>
+              </button>
+            ))}
+            {filteredClients.length === 0 && (
+              <div className="py-10 text-center text-slate-400 text-xs">
+                No se encontraron clientes.
+              </div>
+            )}
+          </div>
+
+          {/* Desktop/Tablet Table (md+) */}
+          <div className={`hidden md:block flex-1 rounded-2xl border overflow-auto ${
             isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
           }`}>
-            <table className="w-full text-left text-xs min-w-[600px]">
+            <table className="w-full text-left text-xs">
               <thead className={`sticky top-0 ${isLight ? 'bg-slate-100 text-slate-700' : 'bg-slate-800 text-slate-300'}`}>
                 <tr>
                   <th className="px-4 py-2.5 font-bold">Nombre</th>
-                  <th className="px-4 py-2.5 font-bold">Correo</th>
+                  <th className="px-4 py-2.5 font-bold hidden xl:table-cell">Correo</th>
                   <th className="px-4 py-2.5 font-bold">Teléfono</th>
                   <th className="px-4 py-2.5 font-bold">RUT / ID</th>
                   <th className="px-4 py-2.5 font-bold text-right">Saldo</th>
@@ -239,11 +283,17 @@ export const ClientsView: React.FC = () => {
                   return (
                     <tr
                       key={client.id}
-                      onClick={() => { sound.playTap(); setSelectedClientId(client.id); }}
+                      onClick={() => {
+                        sound.playTap();
+                        setSelectedClientId(client.id);
+                        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                          setMobileDetailClientId(client.id);
+                        }
+                      }}
                       className={`cursor-pointer transition-colors ${
                         isSelected
                           ? isLight
-                            ? 'bg-amber-100/80 text-slate-950 font-bold'
+                            ? 'bg-amber-50/90 text-slate-950 font-bold'
                             : 'bg-orange-950/40 text-white font-bold'
                           : isLight
                           ? 'hover:bg-slate-50'
@@ -251,10 +301,10 @@ export const ClientsView: React.FC = () => {
                       }`}
                     >
                       <td className="px-4 py-3 font-semibold">{client.name}</td>
-                      <td className="px-4 py-3 truncate max-w-[160px] text-slate-500 dark:text-slate-400">{client.email || '—'}</td>
-                      <td className="px-4 py-3 tabular-nums">{client.phone || '—'}</td>
-                      <td className="px-4 py-3 font-mono">{client.taxId || '—'}</td>
-                      <td className={`px-4 py-3 text-right font-mono font-bold tabular-nums ${
+                      <td className="px-4 py-3 truncate max-w-[160px] text-slate-500 dark:text-slate-400 hidden xl:table-cell">{client.email || '—'}</td>
+                      <td className="px-4 py-3 tabular-nums whitespace-nowrap">{client.phone || '—'}</td>
+                      <td className="px-4 py-3 font-mono whitespace-nowrap">{client.taxId || '—'}</td>
+                      <td className={`px-4 py-3 text-right font-mono font-bold tabular-nums whitespace-nowrap ${
                         client.balance < 0 ? 'text-rose-600' : ''
                       }`}>
                         {formatMoney(client.balance)}
@@ -274,8 +324,8 @@ export const ClientsView: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT INSPECTOR CARD */}
-        <div className={`lg:col-span-4 rounded-xl border p-5 flex flex-col overflow-y-auto ${
+        {/* RIGHT INSPECTOR CARD (Desktop lg+) */}
+        <div className={`hidden lg:flex lg:col-span-4 rounded-2xl border p-5 flex-col overflow-y-auto ${
           isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
         }`}>
           {selectedClient ? (
@@ -284,7 +334,7 @@ export const ClientsView: React.FC = () => {
                 <div>
                   <h3 className="text-base font-black">{selectedClient.name}</h3>
                   <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">
-                    Grupo: {selectedClient.group || 'General'} • Origen: {selectedClient.origin || 'Manual'}
+                    Grupo: {selectedClient.group || 'General'} · Origen: {selectedClient.origin || 'Manual'}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -299,10 +349,8 @@ export const ClientsView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      if (confirm(`¿Eliminar a "${selectedClient.name}"?`)) {
-                        deleteClient(selectedClient.id);
-                        setSelectedClientId('');
-                      }
+                      sound.playTap();
+                      setClientToDelete(selectedClient);
                     }}
                     className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 cursor-pointer"
                     title="Eliminar cliente"
@@ -379,6 +427,132 @@ export const ClientsView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* MOBILE / TABLET CLIENT INSPECTOR BOTTOM SHEET (< lg) */}
+      <AnimatePresence>
+        {mobileDetailClientId && selectedClient && (
+          <div className="lg:hidden fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileDetailClientId(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 340 }}
+              className={`relative w-full md:max-w-md rounded-t-3xl md:rounded-3xl border shadow-2xl p-5 space-y-4 z-10 ${
+                isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+              }`}
+            >
+              <div className="md:hidden w-full pb-1 flex justify-center">
+                <span className="w-10 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+              </div>
+              <div className="flex items-start justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                  <h3 className="text-base font-black">{selectedClient.name}</h3>
+                  <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+                    {selectedClient.group || 'General'} · {selectedClient.taxId || 'Sin RUT'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileDetailClientId(null)}
+                  className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2.5"><Phone className="w-4 h-4 text-slate-400" /><span>{selectedClient.phone || 'Sin teléfono'}</span></div>
+                <div className="flex items-center gap-2.5"><Mail className="w-4 h-4 text-slate-400" /><span>{selectedClient.email || 'Sin correo'}</span></div>
+                <div className="flex items-start gap-2.5"><MapPin className="w-4 h-4 text-slate-400 mt-0.5" /><span>{selectedClient.address || 'Sin dirección'}</span></div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileDetailClientId(null);
+                    openEditModal(selectedClient);
+                  }}
+                  className="min-h-[44px] py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Editar</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const c = selectedClient;
+                    setMobileDetailClientId(null);
+                    setClientToDelete(c);
+                  }}
+                  className="min-h-[44px] py-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Eliminar</span>
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileDetailClientId(null);
+                  createChannelSale({
+                    orderType: 'delivery',
+                    customerId: selectedClient.id,
+                    customerName: selectedClient.name,
+                    deliveryPhone: selectedClient.phone,
+                    deliveryAddress: selectedClient.address,
+                    deliveryFee: 2500,
+                    openInPos: true,
+                  });
+                }}
+                className="w-full min-h-[48px] py-3 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Truck className="w-4 h-4" />
+                <span>Nuevo Pedido Delivery</span>
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* NON-BLOCKING DELETE CONFIRMATION MODAL */}
+      {clientToDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className={`w-full max-w-sm rounded-2xl border p-5 shadow-2xl space-y-4 ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+          }`}>
+            <h3 className="font-black text-sm">Confirmar eliminación</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              ¿Eliminar al cliente <strong className="text-slate-900 dark:text-white">{clientToDelete.name}</strong>? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setClientToDelete(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteClient(clientToDelete.id);
+                  if (selectedClientId === clientToDelete.id) setSelectedClientId('');
+                  setClientToDelete(null);
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white cursor-pointer"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CREATE / EDIT CLIENT MODAL */}
       {isModalOpen && (

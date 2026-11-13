@@ -3,6 +3,7 @@ import { usePOS } from '../context/POSContext';
 import { Sale, Product } from '../types';
 import { sound } from '../utils/sound';
 import { formatCLP, normalizeCurrencySymbol } from '../utils/currency';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Truck, ShoppingBag, Zap, Plus, Search, Clock, Phone, MapPin, User,
   ArrowRight, CreditCard, Check, X, ChevronRight, Utensils
@@ -32,6 +33,7 @@ export const DeliveryAndCounterView: React.FC = () => {
   const [channelTab, setChannelTab] = useState<'delivery' | 'mostrador' | 'express'>('delivery');
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [isCreatingOrder, setIsCreatingOrder] = useState<boolean>(false);
+  const [isMobileExpressCartOpen, setIsMobileExpressCartOpen] = useState<boolean>(false);
 
   // Express counter state
   const [expressSubTab, setExpressSubTab] = useState<'pedidos' | 'historial'>('pedidos');
@@ -684,8 +686,8 @@ export const DeliveryAndCounterView: React.FC = () => {
           )}
         </div>
 
-        {/* RIGHT PANEL: CREATE ORDER / EXPRESS CART / ORDER INSPECTOR */}
-        <aside className={`w-full lg:w-[380px] xl:w-[410px] border-t lg:border-t-0 lg:border-l flex flex-col shrink-0 ${
+        {/* DESKTOP RIGHT PANEL (lg+): CREATE ORDER / EXPRESS CART / ORDER INSPECTOR */}
+        <aside className={`hidden lg:flex w-[380px] xl:w-[410px] border-l flex-col shrink-0 ${
           isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
         }`}>
           {channelTab === 'express' ? (
@@ -1064,6 +1066,279 @@ export const DeliveryAndCounterView: React.FC = () => {
           )}
         </aside>
       </div>
+
+      {/* MOBILE / TABLET FLOATING EXPRESS CART PILL (< lg) */}
+      {channelTab === 'express' && expressCart.length > 0 && (
+        <div className="lg:hidden px-3.5 py-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playTap();
+              setIsMobileExpressCartOpen(true);
+            }}
+            className="w-full min-h-[48px] px-4 py-2.5 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg flex items-center justify-between font-black text-xs cursor-pointer active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4" />
+              <span className="tabular-nums">{expressCart.reduce((a, b) => a + b.quantity, 0)} productos Express</span>
+            </div>
+            <span className="font-mono text-sm tabular-nums">{formatMoney(expressCartTotal)}</span>
+          </button>
+        </div>
+      )}
+
+      {/* ANIMATED MOBILE/TABLET BOTTOM SHEET MODAL FOR ORDERS / CREATE / EXPRESS (< lg) */}
+      <AnimatePresence>
+        {(isCreatingOrder || selectedOrder !== null || (channelTab === 'express' && isMobileExpressCartOpen)) && (
+          <div className="lg:hidden fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setIsCreatingOrder(false);
+                setSelectedOrderId(null);
+                setIsMobileExpressCartOpen(false);
+              }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 340 }}
+              className={`relative w-full md:max-w-md max-h-[88vh] rounded-t-3xl md:rounded-3xl border shadow-2xl flex flex-col overflow-hidden z-10 ${
+                isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-white'
+              }`}
+            >
+              <div className="md:hidden w-full pt-2.5 pb-1 flex justify-center shrink-0">
+                <span className="w-10 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+              </div>
+
+              {channelTab === 'express' && isMobileExpressCartOpen ? (
+                <div className="flex flex-col max-h-[82vh] p-4 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                    <h3 className="text-sm font-black flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-orange-500" />
+                      <span>Pedido Express</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsMobileExpressCartOpen(false)}
+                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={expressCustomerName}
+                    onChange={e => setExpressCustomerName(e.target.value)}
+                    placeholder="Nombre o referencia para llamado (opcional)"
+                    className={`w-full rounded-xl border px-3 py-2.5 text-xs font-medium ${
+                      isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                    }`}
+                  />
+                  <div className="flex-1 overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800">
+                    {expressCart.map(item => (
+                      <div key={item.product.id} className="py-2.5 flex items-center justify-between gap-2 text-xs">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold truncate">{item.product.name}</div>
+                          <div className="text-[11px] text-slate-400 font-mono tabular-nums">
+                            {item.quantity} × {formatMoney(item.product.price)}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpressCart(prev =>
+                                prev
+                                  .map(p => p.product.id === item.product.id ? { ...p, quantity: p.quantity - 1 } : p)
+                                  .filter(p => p.quantity > 0)
+                              )
+                            }
+                            className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 font-bold cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="w-6 text-center font-mono font-bold tabular-nums">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpressCart(prev =>
+                                prev.map(p => p.product.id === item.product.id ? { ...p, quantity: p.quantity + 1 } : p)
+                              )
+                            }
+                            className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 font-bold cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between text-base font-black">
+                      <span>TOTAL</span>
+                      <span className="font-mono tabular-nums">{formatMoney(expressCartTotal)}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setIsMobileExpressCartOpen(false); handleConfirmExpressOrder(false); }}
+                        className="min-h-[44px] py-2.5 rounded-xl bg-slate-800 text-white text-xs font-bold cursor-pointer"
+                      >
+                        Enviar a Cocina
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setIsMobileExpressCartOpen(false); handleConfirmExpressOrder(true); }}
+                        className="min-h-[44px] py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>Cobrar</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : isCreatingOrder ? (
+                <form onSubmit={handleCreateOrderSubmit} className="flex flex-col max-h-[82vh] p-4 space-y-3 overflow-y-auto">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+                    <h3 className="text-sm font-black">
+                      Nuevo Pedido ({channelTab === 'delivery' ? 'Delivery' : 'Mostrador'})
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingOrder(false)}
+                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <select
+                    value={newCustomerId}
+                    onChange={e => handleSelectExistingClient(e.target.value)}
+                    className={`w-full rounded-xl border px-3 py-2.5 text-xs font-medium ${
+                      isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                    }`}
+                  >
+                    <option value="">-- Cliente existente o manual --</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.phone || 'Sin tel.'})</option>
+                    ))}
+                  </select>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <input
+                      type="text"
+                      required
+                      value={newCustomerName}
+                      onChange={e => setNewCustomerName(e.target.value)}
+                      placeholder="Nombre cliente *"
+                      className={`w-full rounded-xl border px-3 py-2.5 text-xs font-medium ${
+                        isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                      }`}
+                    />
+                    <input
+                      type="text"
+                      value={newPhone}
+                      onChange={e => setNewPhone(e.target.value)}
+                      placeholder="Teléfono"
+                      className={`w-full rounded-xl border px-3 py-2.5 text-xs font-medium ${
+                        isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                      }`}
+                    />
+                  </div>
+                  {channelTab === 'delivery' && (
+                    <input
+                      type="text"
+                      required
+                      value={newAddress}
+                      onChange={e => setNewAddress(e.target.value)}
+                      placeholder="Dirección de entrega *"
+                      className={`w-full rounded-xl border px-3 py-2.5 text-xs font-medium ${
+                        isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-white'
+                      }`}
+                    />
+                  )}
+                  <button
+                    type="submit"
+                    className="w-full min-h-[48px] py-3 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Crear y Abrir en TPV</span>
+                  </button>
+                </form>
+              ) : selectedOrder ? (
+                <div className="flex flex-col max-h-[82vh] p-4 space-y-4 overflow-y-auto">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-orange-600 dark:text-orange-400">
+                        {selectedOrder.orderType === 'delivery' ? 'Pedido Delivery' : 'Pedido Mostrador'}
+                      </span>
+                      <h3 className="text-base font-black">{selectedOrder.number}</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrderId(null)}
+                      className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center gap-2"><User className="w-4 h-4 text-slate-400" /><span className="font-bold">{selectedOrder.customerName || selectedOrder.tableName}</span></div>
+                    {selectedOrder.deliveryPhone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-slate-400" /><span className="tabular-nums">{selectedOrder.deliveryPhone}</span></div>}
+                    {selectedOrder.deliveryAddress && <div className="flex items-start gap-2"><MapPin className="w-4 h-4 text-slate-400 mt-0.5" /><span>{selectedOrder.deliveryAddress}</span></div>}
+                  </div>
+                  <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
+                    {selectedOrder.items.map(it => (
+                      <div key={it.id} className="flex justify-between py-1">
+                        <span>{it.quantity}× {it.productName}</span>
+                        <span className="font-mono font-bold tabular-nums">{formatMoney(it.total)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+                    <div className="flex justify-between text-base font-black">
+                      <span>TOTAL</span>
+                      <span className="font-mono tabular-nums">{formatMoney(selectedOrder.total)}</span>
+                    </div>
+                    {selectedOrder.status === 'open' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedOrderId(null);
+                            setActiveSale(selectedOrder);
+                            setActiveView('pos');
+                          }}
+                          className="min-h-[44px] py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold cursor-pointer"
+                        >
+                          Editar en TPV
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const ord = selectedOrder;
+                            setSelectedOrderId(null);
+                            handleChargeOrder(ord);
+                          }}
+                          className="min-h-[44px] py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                          <span>Cobrar</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
